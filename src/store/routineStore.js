@@ -1,7 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-
-const generateId = () => crypto.randomUUID()
+import { syncGoalHoursFromLogs } from '../utils/syncGoalHours'
+import { generateId } from '../utils/id'
 
 export const useRoutineStore = create(
   persist(
@@ -17,10 +17,11 @@ export const useRoutineStore = create(
           createdAt: new Date().toISOString(),
         }
         set((state) => ({ routines: [...state.routines, routine] }))
+        syncGoalHoursFromLogs()
         return routine
       },
 
-      updateRoutine: (id, updates) =>
+      updateRoutine: (id, updates) => {
         set((state) => ({
           routines: state.routines.map((r) =>
             r.id === id
@@ -32,17 +33,24 @@ export const useRoutineStore = create(
                 }
               : r
           ),
-        })),
+        }))
+        syncGoalHoursFromLogs()
+      },
 
-      deleteRoutine: (id) =>
+      deleteRoutine: (id) => {
         set((state) => ({
           routines: state.routines.filter((r) => r.id !== id),
-        })),
+        }))
+        syncGoalHoursFromLogs()
+      },
 
       getTotalPlannedHours: () =>
         get().routines.reduce((sum, r) => sum + r.plannedHours, 0),
 
-      setRoutines: (routines) => set({ routines }),
+      setRoutines: (routines) => {
+        set({ routines })
+        syncGoalHoursFromLogs()
+      },
 
       reset: () => set({ routines: [] }),
     }),

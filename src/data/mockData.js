@@ -1,6 +1,5 @@
 import dayjs from 'dayjs'
-
-const generateId = () => crypto.randomUUID()
+import { generateId } from '../utils/id'
 
 export const GOAL_ID = 'goal-ielts-7'
 export const GOAL_ID_2 = 'goal-react-mastery'
@@ -11,6 +10,7 @@ export const mockGoals = [
     name: 'IELTS 7.0',
     description: 'Achieve IELTS band 7.0 through consistent daily study and practice.',
     targetHours: 500,
+    baselineHours: 120,
     currentHours: 120,
     deadline: '2026-12-31',
     createdAt: dayjs().subtract(60, 'day').format('YYYY-MM-DD'),
@@ -20,6 +20,7 @@ export const mockGoals = [
     name: 'React Mastery',
     description: 'Build production-ready React apps and master modern frontend patterns.',
     targetHours: 300,
+    baselineHours: 85,
     currentHours: 85,
     deadline: '2026-09-30',
     createdAt: dayjs().subtract(30, 'day').format('YYYY-MM-DD'),
@@ -62,7 +63,6 @@ export const mockRoutines = [
 ]
 
 const triggers = ['YouTube', 'Social Media', 'Fatigue', 'Procrastination', 'Gaming', 'Friends']
-const activities = ['YouTube', 'Gaming', 'Sleeping', 'Facebook', 'Chatting']
 
 export const generateMockLogs = () => {
   const logs = []
@@ -82,7 +82,7 @@ export const generateMockLogs = () => {
           status: 'failed',
           plannedHours,
           actualHours: 0,
-          actualActivity: activities[(i + idx) % activities.length],
+          actualActivity: null,
           trigger: triggers[(i + idx) % triggers.length],
           note: '',
         })

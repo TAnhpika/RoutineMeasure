@@ -1,16 +1,8 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { today } from '../utils/date'
-import { useGoalStore } from './goalStore'
-import { useRoutineStore } from './routineStore'
-
-const generateId = () => crypto.randomUUID()
-
-const resolveGoalId = (logData) => {
-  if (logData.goalId) return logData.goalId
-  const routine = useRoutineStore.getState().routines.find((r) => r.id === logData.routineId)
-  return routine?.goalId || null
-}
+import { syncGoalHoursFromLogs } from '../utils/syncGoalHours'
+import { generateId } from '../utils/id'
 
 export const useDailyLogStore = create(
   persist(
@@ -25,9 +17,7 @@ export const useDailyLogStore = create(
       upsertLog: (logData) => {
         const date = logData.date || today()
         const existing = get().getLogForRoutine(logData.routineId, date)
-        const previousActual = existing?.actualHours || 0
         const newActual = Number(logData.actualHours || 0)
-        const goalId = resolveGoalId(logData)
 
         if (existing) {
           set((state) => ({
@@ -53,31 +43,24 @@ export const useDailyLogStore = create(
           set((state) => ({ logs: [...state.logs, log] }))
         }
 
-        const hoursDiff = newActual - previousActual
-        if (hoursDiff !== 0 && goalId) {
-          useGoalStore.getState().addHours(goalId, hoursDiff)
-        }
+        syncGoalHoursFromLogs()
       },
 
       clearLogForRoutine: (routineId, date = today()) => {
         const existing = get().getLogForRoutine(routineId, date)
         if (!existing) return
 
-        const routine = useRoutineStore.getState().routines.find((r) => r.id === routineId)
-        const goalId = routine?.goalId
-
-        if (existing.actualHours && goalId) {
-          useGoalStore.getState().addHours(goalId, -existing.actualHours)
-        }
-
         set((state) => ({
           logs: state.logs.filter((l) => l.id !== existing.id),
         }))
+
+        syncGoalHoursFromLogs()
       },
 
       deleteLog: (id) => {
         const log = get().logs.find((l) => l.id === id)
         set((state) => ({ logs: state.logs.filter((l) => l.id !== id) }))
+        if (log) syncGoalHoursFromLogs()
         return log
       },
 
@@ -101,7 +84,10 @@ export const useDailyLogStore = create(
         })
       },
 
-      setLogs: (logs) => set({ logs }),
+      setLogs: (logs) => {
+        set({ logs })
+        syncGoalHoursFromLogs()
+      },
 
       reset: () => set({ logs: [] }),
     }),

@@ -3,6 +3,7 @@ import { useRoutineStore } from '../store/routineStore'
 import { useDailyLogStore } from '../store/dailyLogStore'
 import { useSettingsStore } from '../store/settingsStore'
 import { useTriggerStore } from '../store/triggerStore'
+import { syncGoalHoursFromLogs } from './syncGoalHours'
 
 export const exportAllData = () => {
   const data = {
@@ -38,6 +39,8 @@ export const importAllData = (file) =>
         if (data.logs) useDailyLogStore.getState().setLogs(data.logs)
         if (data.triggers) useTriggerStore.getState().setTriggers(data.triggers)
         if (data.settings?.theme) useSettingsStore.getState().setTheme(data.settings.theme)
+
+        syncGoalHoursFromLogs()
 
         resolve(data)
       } catch (err) {

@@ -34,12 +34,18 @@ export const calculateWeeklyDrift = (logs) => calculatePeriodDrift(logs, getWeek
 
 export const calculateMonthlyDrift = (logs) => calculatePeriodDrift(logs, getMonthDates())
 
+export const hasLogDrift = (log) =>
+  calculateItemDrift(log.plannedHours, log.actualHours) > 0
+
+export const shouldCountTrigger = (log) =>
+  Boolean(log?.trigger) && (log.status === 'failed' || hasLogDrift(log))
+
 export const calculateTriggerFrequency = (logs) => {
   const counts = {}
   let total = 0
 
   logs.forEach((log) => {
-    if (log.status === 'failed' && log.trigger) {
+    if (shouldCountTrigger(log)) {
       counts[log.trigger] = (counts[log.trigger] || 0) + 1
       total++
     }
@@ -63,7 +69,7 @@ export const calculateTriggerTrend = (logs) => {
   const topTriggers = calculateTriggerFrequency(logs).distribution.slice(0, 5).map((t) => t.name)
 
   return weekDates.map((date) => {
-    const dayLogs = logs.filter((l) => l.date === date && l.status === 'failed')
+    const dayLogs = logs.filter((l) => l.date === date && shouldCountTrigger(l))
     const entry = { date, label: dayjs(date).format('ddd') }
 
     topTriggers.forEach((trigger) => {
@@ -75,10 +81,12 @@ export const calculateTriggerTrend = (logs) => {
 }
 
 export const calculateGoalProgress = (goal) => {
-  if (!goal) return { percentage: 0, remainingHours: 0 }
-  const remaining = Math.max(0, goal.targetHours - goal.currentHours)
-  const percentage = Math.min(100, Math.round((goal.currentHours / goal.targetHours) * 100))
-  return { percentage, remainingHours: remaining }
+  if (!goal) return { percentage: 0, remainingHours: 0, currentHours: 0 }
+  const target = Math.max(1, Number(goal.targetHours) || 1)
+  const current = Math.max(0, Number(goal.currentHours) || 0)
+  const remaining = Math.max(0, target - current)
+  const percentage = Math.min(100, Math.max(0, Math.round((current / target) * 100)))
+  return { percentage, remainingHours: remaining, currentHours: current }
 }
 
 export const calculateConsequences = (goal) => {
@@ -89,25 +97,44 @@ export const calculateConsequences = (goal) => {
       expectedCompletionDate: null,
       daysDelayed: 0,
       hoursBehind: 0,
+      isPastDeadline: false,
     }
   }
 
-  const remainingHours = Math.max(0, goal.targetHours - goal.currentHours)
-  const elapsed = daysElapsed(goal.createdAt)
-  const currentPace = goal.currentHours / elapsed
+  const now = dayjs()
+  const target = Math.max(1, Number(goal.targetHours) || 1)
+  const current = Math.max(0, Number(goal.currentHours) || 0)
+  const remainingHours = Math.max(0, target - current)
+  const createdAt = dayjs(goal.createdAt || now.format('YYYY-MM-DD'))
   const deadline = dayjs(goal.deadline)
-  const totalDaysToDeadline = Math.max(1, deadline.diff(dayjs(goal.createdAt), 'day'))
-  const daysPassedRatio = Math.min(1, elapsed / totalDaysToDeadline)
-  const expectedHoursByNow = goal.targetHours * daysPassedRatio
-  const hoursBehind = Math.max(0, expectedHoursByNow - goal.currentHours)
+  const elapsed = daysElapsed(goal.createdAt)
+  const currentPace = elapsed > 0 ? current / elapsed : 0
+  const isPastDeadline = remainingHours > 0 && now.isAfter(deadline, 'day')
+  const totalDaysToDeadline = deadline.diff(createdAt, 'day')
+
+  let hoursBehind = 0
+  if (remainingHours <= 0) {
+    hoursBehind = 0
+  } else if (totalDaysToDeadline > 0 && !now.isAfter(deadline, 'day')) {
+    const scheduleDays = Math.min(elapsed, totalDaysToDeadline)
+    const expectedHoursByNow = target * (scheduleDays / totalDaysToDeadline)
+    hoursBehind = Math.max(0, expectedHoursByNow - current)
+  }
 
   let expectedCompletionDate = null
   let daysDelayed = 0
 
-  if (currentPace > 0) {
+  if (remainingHours > 0 && currentPace > 0) {
     const daysNeeded = Math.ceil(remainingHours / currentPace)
-    expectedCompletionDate = dayjs().add(daysNeeded, 'day').format('YYYY-MM-DD')
-    daysDelayed = Math.max(0, dayjs(expectedCompletionDate).diff(deadline, 'day'))
+    expectedCompletionDate = now.add(daysNeeded, 'day').format('YYYY-MM-DD')
+  }
+
+  if (remainingHours > 0) {
+    if (isPastDeadline) {
+      daysDelayed = now.diff(deadline, 'day')
+    } else if (expectedCompletionDate) {
+      daysDelayed = Math.max(0, dayjs(expectedCompletionDate).diff(deadline, 'day'))
+    }
   }
 
   return {
@@ -116,6 +143,7 @@ export const calculateConsequences = (goal) => {
     expectedCompletionDate,
     daysDelayed,
     hoursBehind: Math.round(hoursBehind * 10) / 10,
+    isPastDeadline,
   }
 }
 

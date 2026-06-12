@@ -39,7 +39,7 @@ export function TodayRoutineCard({ routines, logs }) {
     return (
       <Card>
         <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">Today&apos;s Routine</h3>
-        <p className="text-sm text-muted">No routine items yet. Add them in Goals.</p>
+        <p className="text-sm text-muted">No routine items yet. Add them in Settings.</p>
       </Card>
     )
   }
@@ -76,6 +76,7 @@ export function TodayRoutineCard({ routines, logs }) {
                       {routine.plannedHours}h planned
                       {log && ` · ${log.actualHours}h done`}
                       {drift > 0 && ` · ${drift}h drift`}
+                      {log?.trigger && ` · ${log.trigger}`}
                       {routine.goalId && ` · ${getGoalName(routine.goalId)}`}
                     </p>
                   </div>

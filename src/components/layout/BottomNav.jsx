@@ -1,15 +1,17 @@
 import { NavLink, useLocation } from 'react-router-dom'
+import { useUiStore } from '../../store/uiStore'
 
 const navItems = [
   { to: '/', label: 'Dashboard', icon: '🏠' },
-  { to: '/goals', label: 'Goals', icon: '🎯' },
-  { to: '/check-in', label: 'Check-In', icon: '✓' },
   { to: '/analytics', label: 'Analytics', icon: '📊' },
   { to: '/settings', label: 'Settings', icon: '⚙️' },
 ]
 
 export function BottomNav() {
   const location = useLocation()
+  const modalOpen = useUiStore((s) => s.modalCount > 0)
+
+  if (modalOpen) return null
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-40 bg-surface-elevated/95 backdrop-blur-lg border-t border-border safe-bottom">

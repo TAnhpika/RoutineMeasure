@@ -6,6 +6,7 @@ import { useSettingsStore } from '../store/settingsStore'
 import { useTriggerStore } from '../store/triggerStore'
 import { DEFAULT_TRIGGERS } from '../constants/triggers'
 import { mockData } from '../data/mockData'
+import { syncGoalHoursFromLogs } from '../utils/syncGoalHours'
 
 export const useInitializeApp = () => {
   const initialized = useSettingsStore((s) => s.initialized)
@@ -28,6 +29,12 @@ export const useInitializeApp = () => {
       setTriggers([...DEFAULT_TRIGGERS])
     }
   }, [triggers.length, setTriggers])
+
+  useEffect(() => {
+    if (goals.length > 0) {
+      syncGoalHoursFromLogs()
+    }
+  }, []) // sync goal hours from logs on app load
 
   useEffect(() => {
     if (!initialized && goals.length === 0) {

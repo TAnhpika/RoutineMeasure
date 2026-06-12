@@ -1,13 +1,17 @@
-import { Card, ProgressBar } from '../ui'
+import { Card, Button, ProgressBar } from '../ui'
 import { formatDate } from '../../utils/date'
 import { calculateGoalProgress } from '../../utils/calculations'
 
-export function GoalProgressCard({ goal, progress, compact = false }) {
+export function GoalProgressCard({ goal, progress, compact = false, onClick }) {
   if (!goal) return null
 
   if (compact) {
     return (
-      <div className="bg-surface rounded-xl p-3">
+      <button
+        type="button"
+        onClick={() => onClick?.(goal)}
+        className="w-full text-left bg-surface rounded-xl p-3 transition-all duration-200 hover:bg-surface-elevated active:scale-[0.99] cursor-pointer"
+      >
         <div className="flex items-start justify-between mb-2">
           <div className="min-w-0 flex-1">
             <p className="font-semibold truncate">{goal.name}</p>
@@ -17,10 +21,10 @@ export function GoalProgressCard({ goal, progress, compact = false }) {
         </div>
         <ProgressBar value={progress.percentage} className="mb-2" />
         <div className="flex justify-between text-xs text-muted">
-          <span>{goal.currentHours}h / {goal.targetHours}h</span>
+          <span>{progress.currentHours}h / {goal.targetHours}h</span>
           <span>{progress.remainingHours}h left</span>
         </div>
-      </div>
+      </button>
     )
   }
 
@@ -50,19 +54,30 @@ export function GoalProgressCard({ goal, progress, compact = false }) {
   )
 }
 
-export function GoalsOverviewCard({ goals }) {
+export function GoalsOverviewCard({ goals, onGoalClick, onAddGoal }) {
   if (!goals.length) return null
 
   return (
     <Card>
-      <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">
-        Your Goals ({goals.length})
-      </h3>
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="text-sm font-semibold text-muted uppercase tracking-wider">
+          Your Goals ({goals.length})
+        </h3>
+        {onAddGoal && (
+          <Button size="sm" onClick={onAddGoal}>+ Goal</Button>
+        )}
+      </div>
       <div className="space-y-3">
         {goals.map((goal) => {
           const progress = calculateGoalProgress(goal)
           return (
-            <GoalProgressCard key={goal.id} goal={goal} progress={progress} compact />
+            <GoalProgressCard
+              key={goal.id}
+              goal={goal}
+              progress={progress}
+              compact
+              onClick={onGoalClick}
+            />
           )
         })}
       </div>

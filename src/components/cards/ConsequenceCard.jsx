@@ -1,50 +1,35 @@
-import { Card, StatRow } from '../ui'
+import { StatRow } from '../ui'
 import { formatDate } from '../../utils/date'
 import { calculateConsequences } from '../../utils/calculations'
 
-export function ConsequenceCard({ consequences, goal }) {
+export function GoalConsequences({ goal }) {
   if (!goal) return null
 
+  const consequences = calculateConsequences(goal)
+
   return (
-    <Card>
-      <p className="text-xs text-muted uppercase tracking-wider mb-2">{goal.name}</p>
-      <div className="space-y-1">
-        <StatRow label="Remaining" value={`${consequences.remainingHours}h`} />
-        <StatRow label="Current Pace" value={`${consequences.currentPace}h/day`} highlight="text-accent" />
-        {consequences.expectedCompletionDate && (
-          <StatRow
-            label="Expected Completion"
-            value={formatDate(consequences.expectedCompletionDate, 'MMM D, YYYY')}
-          />
-        )}
+    <div className="border-t border-border pt-4 mt-4 space-y-1">
+      <p className="text-xs text-muted uppercase tracking-wider mb-2">Consequences</p>
+      <StatRow label="Remaining" value={`${consequences.remainingHours}h`} />
+      <StatRow label="Current Pace" value={`${consequences.currentPace}h/day`} highlight="text-accent" />
+      {consequences.expectedCompletionDate && (
         <StatRow
-          label="Days Delayed"
-          value={consequences.daysDelayed}
-          highlight={consequences.daysDelayed > 0 ? 'text-danger' : 'text-success'}
+          label="Expected Completion"
+          value={formatDate(consequences.expectedCompletionDate, 'MMM D, YYYY')}
         />
+      )}
+      <StatRow
+        label={consequences.isPastDeadline ? 'Days Overdue' : 'Days Delayed'}
+        value={consequences.daysDelayed}
+        highlight={consequences.daysDelayed > 0 ? 'text-danger' : 'text-success'}
+      />
+      {!consequences.isPastDeadline && (
         <StatRow
           label="Hours Behind"
           value={`${consequences.hoursBehind}h`}
           highlight={consequences.hoursBehind > 0 ? 'text-danger' : 'text-success'}
         />
-      </div>
-    </Card>
-  )
-}
-
-export function AllConsequencesCard({ goals }) {
-  if (!goals.length) return null
-
-  return (
-    <div className="space-y-3">
-      <h3 className="text-sm font-semibold text-muted uppercase tracking-wider px-1">Consequences</h3>
-      {goals.map((goal) => (
-        <ConsequenceCard
-          key={goal.id}
-          goal={goal}
-          consequences={calculateConsequences(goal)}
-        />
-      ))}
+      )}
     </div>
   )
 }

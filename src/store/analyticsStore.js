@@ -20,7 +20,8 @@ export const useAnalyticsStore = create(() => ({
 
     return {
       todaySummary: calculateDailyHours(todayLogs),
-      triggers: calculateTriggerFrequency(allLogs),
+      triggers: calculateTriggerFrequency(todayLogs),
+      allTriggers: calculateTriggerFrequency(allLogs),
       todayLogs,
     }
   },

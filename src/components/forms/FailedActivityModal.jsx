@@ -1,10 +1,11 @@
 import { useForm } from 'react-hook-form'
 import { Button, Input, Select } from '../ui'
-import { ACTUAL_ACTIVITIES } from '../../constants/triggers'
 import { useTriggerStore } from '../../store/triggerStore'
+import { useModalLock } from '../../hooks/useModalLock'
 
 export function FailedActivityModal({ isOpen, onClose, routine, onSubmit }) {
   const triggers = useTriggerStore((s) => s.triggers)
+  useModalLock(isOpen)
 
   const {
     register,
@@ -12,7 +13,6 @@ export function FailedActivityModal({ isOpen, onClose, routine, onSubmit }) {
     reset,
   } = useForm({
     defaultValues: {
-      actualActivity: ACTUAL_ACTIVITIES[0],
       trigger: triggers[0] ?? '',
       note: '',
     },
@@ -23,7 +23,9 @@ export function FailedActivityModal({ isOpen, onClose, routine, onSubmit }) {
       status: 'failed',
       plannedHours: routine.plannedHours,
       actualHours: 0,
-      ...data,
+      trigger: data.trigger,
+      actualActivity: null,
+      note: data.note,
     })
     reset()
     onClose()
@@ -34,16 +36,11 @@ export function FailedActivityModal({ isOpen, onClose, routine, onSubmit }) {
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-surface-elevated border border-border rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-surface-elevated border border-border rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto scrollbar-hide">
         <h2 className="text-lg font-semibold mb-1">Activity Failed</h2>
         <p className="text-sm text-muted mb-4">{routine.activity} — {routine.plannedHours}h planned</p>
 
         <form onSubmit={handleSubmit(handleFormSubmit)} className="space-y-4">
-          <Select
-            label="What did you do instead?"
-            options={ACTUAL_ACTIVITIES.map((a) => ({ value: a, label: a }))}
-            {...register('actualActivity')}
-          />
           <Select
             label="Trigger"
             options={triggers.map((t) => ({ value: t, label: t }))}

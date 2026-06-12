@@ -1,12 +1,13 @@
 import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { Button, Input, Select } from '../ui'
-import { ACTUAL_ACTIVITIES } from '../../constants/triggers'
 import { useTriggerStore } from '../../store/triggerStore'
 import { calculateItemDrift } from '../../utils/calculations'
+import { useModalLock } from '../../hooks/useModalLock'
 
 export function RoutineLogModal({ isOpen, onClose, routine, existingLog, onSubmit, onClear }) {
   const triggers = useTriggerStore((s) => s.triggers)
+  useModalLock(isOpen)
 
   const {
     register,
@@ -18,18 +19,16 @@ export function RoutineLogModal({ isOpen, onClose, routine, existingLog, onSubmi
     defaultValues: {
       actualHours: '',
       trigger: '',
-      actualActivity: ACTUAL_ACTIVITIES[0],
       note: '',
     },
   })
 
   useEffect(() => {
     if (isOpen && routine) {
-      const defaultTrigger = existingLog?.trigger ?? triggers[0] ?? ''
+      const defaultTrigger = existingLog?.trigger ?? existingLog?.actualActivity ?? triggers[0] ?? ''
       reset({
         actualHours: existingLog?.actualHours ?? routine.plannedHours,
         trigger: defaultTrigger,
-        actualActivity: existingLog?.actualActivity ?? ACTUAL_ACTIVITIES[0],
         note: existingLog?.note ?? '',
       })
     }
@@ -50,7 +49,7 @@ export function RoutineLogModal({ isOpen, onClose, routine, existingLog, onSubmi
       plannedHours,
       actualHours: hours,
       trigger: hasDrift ? data.trigger : null,
-      actualActivity: hasDrift && hours === 0 ? data.actualActivity : null,
+      actualActivity: null,
       note: data.note || '',
     })
     onClose()
@@ -63,7 +62,7 @@ export function RoutineLogModal({ isOpen, onClose, routine, existingLog, onSubmi
   return (
     <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center">
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
-      <div className="relative w-full max-w-lg bg-surface-elevated border border-border rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto">
+      <div className="relative w-full max-w-lg bg-surface-elevated border border-border rounded-t-3xl sm:rounded-2xl p-6 max-h-[90vh] overflow-y-auto scrollbar-hide">
         <h2 className="text-lg font-semibold mb-1">{routine.activity}</h2>
         <p className="text-sm text-muted mb-4">Log today&apos;s progress</p>
 
@@ -103,17 +102,9 @@ export function RoutineLogModal({ isOpen, onClose, routine, existingLog, onSubmi
             <div className="space-y-4 p-4 bg-danger/5 border border-danger/20 rounded-xl">
               <p className="text-sm text-danger font-medium">
                 {actualHours === 0
-                  ? `You missed ${plannedHours}h — what happened?`
-                  : `Short by ${drift}h — what caused the drift?`}
+                  ? `You missed ${plannedHours}h — select a trigger`
+                  : `Short by ${drift}h — select a trigger`}
               </p>
-
-              {actualHours === 0 && (
-                <Select
-                  label="What did you do instead?"
-                  options={ACTUAL_ACTIVITIES.map((a) => ({ value: a, label: a }))}
-                  {...register('actualActivity')}
-                />
-              )}
 
               {triggerOptions.length > 0 ? (
                 <Select

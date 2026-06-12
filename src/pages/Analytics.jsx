@@ -1,12 +1,10 @@
 import { useState, useMemo } from 'react'
 import { AppLayout } from '../components/layout/AppLayout'
-import { Card, Badge, EmptyState } from '../components/ui'
+import { Card, EmptyState } from '../components/ui'
 import { RecoveryCard } from '../components/cards/QuoteCard'
 import { TriggerPieChart } from '../components/charts/TriggerPieChart'
-import { TriggerBarChart } from '../components/charts/TriggerBarChart'
 import { TriggerTrendChart } from '../components/charts/TriggerTrendChart'
 import { DriftChart } from '../components/charts/DriftChart'
-import { AllConsequencesCard } from '../components/cards/ConsequenceCard'
 import { useInitializeApp, useSharedRoutines } from '../hooks/useInitializeApp'
 import { useGoalStore } from '../store/goalStore'
 import { useDailyLogStore } from '../store/dailyLogStore'
@@ -114,33 +112,9 @@ export default function Analytics() {
         </Card>
 
         <Card>
-          <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">Top Trigger Ranking</h3>
-          <TriggerBarChart data={report.triggers.distribution} />
-        </Card>
-
-        <Card>
           <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-2">Trigger Trend</h3>
           <TriggerTrendChart data={triggerTrend} triggers={trendTriggers} />
         </Card>
-
-        <AllConsequencesCard goals={goals} />
-
-        {report.triggers.distribution.length > 0 && (
-          <Card>
-            <h3 className="text-sm font-semibold text-muted uppercase tracking-wider mb-3">Trigger Frequency</h3>
-            <div className="space-y-2">
-              {report.triggers.distribution.map((t) => (
-                <div key={t.name} className="flex items-center justify-between">
-                  <span className="text-sm">{t.name}</span>
-                  <div className="flex items-center gap-2">
-                    <Badge>{t.count}x</Badge>
-                    <span className="text-sm font-semibold">{t.percentage}%</span>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        )}
       </div>
     </AppLayout>
   )

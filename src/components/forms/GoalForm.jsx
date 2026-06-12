@@ -38,12 +38,13 @@ export function GoalForm({ defaultValues, onSubmit, onCancel }) {
         {...register('targetHours', { required: 'Target hours is required', min: 1 })}
       />
       <Input
-        label="Current Hours"
+        label="Starting Hours"
         type="number"
         step="0.5"
         min="0"
         {...register('currentHours')}
       />
+      <p className="text-xs text-muted -mt-2">Hours completed before tracking. Done hours from routine are added automatically.</p>
       <Input
         label="Deadline"
         type="date"
